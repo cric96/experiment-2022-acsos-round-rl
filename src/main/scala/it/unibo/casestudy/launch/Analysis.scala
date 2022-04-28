@@ -181,10 +181,10 @@ object Analysis extends App {
     )
     val elements = sequence(
       List(
-        // outputPlot,
+        outputPlot,
         totalTicksPlot,
         frequencyPlot,
-        // errorPerSecond,
+        errorPerSecond,
         percentageOfRoundAndOutput
       ),
       TableLayout(3)
