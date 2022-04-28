@@ -39,17 +39,18 @@ class RLRoundEvaluation(
 ) extends RoundEvent {
   self =>
   import rlConfig._
-  protected var q: QRLFamily.QFunction = QRLFamily.QFunction(Set(EnergySaving, FullSpeed, Normal))
+  protected var q: QRLFamily.QFunction = globalQ
   protected var oldValue: Double = Double.PositiveInfinity
   protected var state: State = State(FullSpeed, Seq.empty[OutputDirection])
   protected var reinforcementLearningProcess: QRLFamily.RealtimeQLearning =
     QRLFamily.RealtimeQLearning(gamma, q, QRL.StaticParameters(epsilon, alpha, beta))
-  implicit val random = new Random(seed)
+  implicit val random = RLRoundEvaluation.random
   override def act(network: DesIncarnation.NetworkSimulator): Option[DesIncarnation.Event] = {
     // ARRANGE
     val context = network.context(node)
     // PAY ATTENTION! THE DELTA TIME MUST BE PERCEIVED BEFORE THE ROUND EXECUTION!
     val deltaTime = context.sense[FiniteDuration]("LSNS_DELTA_TIME").get
+
     val currentHistory = state.history
     reinforcementLearningProcess.setState(state)
     // ROUND EVALUATION
@@ -120,6 +121,16 @@ class RLRoundEvaluation(
 }
 
 object RLRoundEvaluation {
+  private[RLRoundEvaluation] val QRLFamily: QRLImpl[State, WeakUpAction] = new QRLImpl[State, WeakUpAction] {}
+  private[RLRoundEvaluation] var random: Random = _
+  private[RLRoundEvaluation] var globalQ: QRLFamily.QFunction = _
+  reset(0)
+
+  def reset(seed: Int): Unit = {
+    random = new Random(seed)
+    globalQ = QRLFamily.QFunction(Set(EnergySaving, FullSpeed, Normal))
+  }
+
   sealed abstract class WeakUpAction(val next: FiniteDuration)
   case object EnergySaving extends WeakUpAction(1 seconds)
   case object FullSpeed extends WeakUpAction(100 milliseconds)
@@ -132,8 +143,6 @@ object RLRoundEvaluation {
 
   case class State(currentSetting: WeakUpAction, history: Seq[OutputDirection])
 
-  val QRLFamily: QRLImpl[State, WeakUpAction] = new QRLImpl[State, WeakUpAction] {}
-
   class Configuration(
       val gamma: V[Double],
       val alpha: V[Double],
@@ -142,7 +151,6 @@ object RLRoundEvaluation {
       val learn: V[Boolean] = true
   ) {
     def update(): Unit = gamma :: alpha :: epsilon :: learn :: beta :: Nil foreach (_.next())
-
     override def toString = s"Configuration($gamma, $alpha, $beta, $epsilon, $learn)"
   }
 

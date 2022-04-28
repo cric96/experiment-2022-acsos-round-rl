@@ -110,6 +110,7 @@ object Main extends App {
       configurationName: String
   ): Unit = {
     os.makeDir(resultFolder / configurationName)
+    RLRoundEvaluation.reset(0)
     val rlRoundFunction = Memoize[ID, RLRoundEvaluation] { id =>
       new RLRoundEvaluation(id, program, zero, temporalWindow, stableWeight, config)
     }.andThen(_.updateVariables().reset()) // used to clear the variables at the begging of each learning process
