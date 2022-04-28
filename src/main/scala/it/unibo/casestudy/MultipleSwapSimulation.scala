@@ -1,12 +1,10 @@
 package it.unibo.casestudy
 
 import it.unibo.casestudy.DesIncarnation._
-import it.unibo.casestudy.SwapSimulation.SimulationConfiguration
 import it.unibo.casestudy.Simulation.{TicksAndOutput, WorldSetting}
 import it.unibo.casestudy.event.ChangeSourceAt
-import it.unibo.casestudy.gui.MiniGui
 import it.unibo.casestudy.utils.Variable.V
-import it.unibo.casestudy.utils.{DesUtils, ExperimentConstant, ExperimentTrace}
+import it.unibo.casestudy.utils.{DesUtils, ExperimentConstant}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.language.postfixOps
