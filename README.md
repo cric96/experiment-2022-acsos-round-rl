@@ -14,3 +14,8 @@ The command to launch are:
 ## Miscellaneous
 This repository used an ad-hoc ScaFi version with the support of DES-like simulations.
 This will probably add in the main repository, currently this work is [here](https://github.com/cric96/scafi/tree/des-simulator).
+
+## Results
+
+![](resources/expand-pattern.gif)
+![](resources/movement-pattern.gif)

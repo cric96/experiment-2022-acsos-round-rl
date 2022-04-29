@@ -66,32 +66,35 @@ object Analysis extends App {
     val rl = load(allFiles, rlName, convertOther, sample)
     val (_, error) = load(allFiles, errorName, convertSingle).head
     val (_, totalTicks) = load(allFiles, totalTicksName, convertSingle).head
-    // Plots preparation
-    val errorPlot = xyplot(
-      (error, List(redLine), InLegend("Error"))
-    )(
-      par(xlab = "episode", ylab = "Root Mean Squared Error")
-    )
-    val totalTickPlot = xyplot(
-      (totalTicks, List(bluishGreen), InLegend("Average ticks per second"))
-    )(
-      par(xlab = "episode", ylab = "Ticks per seconds")
-    )
-    os.makeDir(imageFolder / experimentName)
-    // Plot storage
-    rl.foreach { case (name, data) =>
-      scribe.info(s"process: $name")
-      plotRl(imageFolder / experimentName, data, fixed, adHoc, name)
-    }
-    store(
-      svgToFile(tempFile, sequence(List(errorPlot, totalTickPlot), TableLayout(2)), width),
-      imageFolder / experimentName / s"error-and-ticks.svg"
-    )
-    store(svgToFile(tempFile, errorPlot, width), imageFolder / experimentName / s"error.svg")
-    store(svgToFile(tempFile, totalTickPlot, width), imageFolder / experimentName / s"ticks.svg")
+    if (totalTicks.last > 400) { println("skip " + experimentName) }
+    else {
+      // Plots preparation
+      val errorPlot = xyplot(
+        (error, List(redLine), InLegend("Error"))
+      )(
+        par(xlab = "episode", ylab = "Root Mean Squared Error")
+      )
+      val totalTickPlot = xyplot(
+        (totalTicks, List(bluishGreen), InLegend("Average ticks per second"))
+      )(
+        par(xlab = "episode", ylab = "Ticks per seconds")
+      )
+      os.makeDir(imageFolder / experimentName)
+      // Plot storage
+      rl.foreach { case (name, data) =>
+        scribe.info(s"process: $name")
+        plotRl(imageFolder / experimentName, data, fixed, adHoc, name)
+      }
+      store(
+        svgToFile(tempFile, sequence(List(errorPlot, totalTickPlot), TableLayout(2)), width),
+        imageFolder / experimentName / s"error-and-ticks.svg"
+      )
+      store(svgToFile(tempFile, errorPlot, width), imageFolder / experimentName / s"error.svg")
+      store(svgToFile(tempFile, totalTickPlot, width), imageFolder / experimentName / s"ticks.svg")
 
-    experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
-    scribe.warn(s"End: $experimentName")
+      experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
+      scribe.warn(s"End: $experimentName")
+    }
   }
 
   os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n"))

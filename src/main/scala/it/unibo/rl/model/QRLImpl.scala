@@ -1,7 +1,7 @@
 package it.unibo.rl.model
 
 import it.unibo.rl.model.QRL.QLParameter
-
+import upickle.default._
 import scala.util.Random
 
 trait QRLImpl[S, A] extends QRL[S, A] with Serializable {
@@ -24,6 +24,11 @@ trait QRLImpl[S, A] extends QRL[S, A] with Serializable {
     override def update(s: S, a: A, v: Double): Q = { map += ((s -> a) -> v); this }
     override def toString: String = map.toString
   }
+
+  def storeQ(q: QFunction)(implicit s: ReadWriter[A], a: ReadWriter[S]): String = write(q.map)
+
+  def loadFromMap(base: QFunction, string: String)(implicit s: ReadWriter[A], a: ReadWriter[S]): Unit =
+    read[Map[(S, A), R]](string).foreach { case ((s, a), v) => base.update(s, a, v) }
 
   case class RealtimeQLearning(gamma: Double, q0: Q, parameter: QLParameter) {
     private var state: Option[S] = None

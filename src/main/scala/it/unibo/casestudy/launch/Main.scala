@@ -95,6 +95,7 @@ object Main extends App {
       weight,
       configurationName
     )
+
     scribe.warn(
       bgYellow(s"Total Time: ${FiniteDuration(System.currentTimeMillis() - clock, TimeUnit.MILLISECONDS).toSeconds}")
     )
@@ -154,6 +155,8 @@ object Main extends App {
     }.last // consume the stream
     storeSequence(resultFolder / configurationName / s"$errorName.csv", recordError, errorName)
     storeSequence(resultFolder / configurationName / s"$totalTicksName.csv", recordTotalTicks, totalTicksName)
+    store(resultFolder / configurationName / "q", RLRoundEvaluation.printCurrentTable())
+
   }
   // Store standard performance
   storeInCsv(
@@ -176,6 +179,9 @@ object Main extends App {
     writer.writeAll(toStore.map(Seq(_)))
     writer.close()
   }
+
+  def store(where: os.Path, data: String): Unit =
+    os.write(where, data)
   /*
    evaluated the error percentage from a reference to another track.
    */

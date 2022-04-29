@@ -1,14 +1,15 @@
 package it.unibo.casestudy.event
+import it.unibo.casestudy.DesIncarnation
 import it.unibo.casestudy.DesIncarnation._
-import it.unibo.casestudy.event.RLRoundEvaluation.{Normal, _}
+import it.unibo.casestudy.event.RLRoundEvaluation._
+import it.unibo.casestudy.RLAgent.{Normal, State, _}
+import it.unibo.casestudy.utils.ExperimentConstant
 import it.unibo.casestudy.utils.RichDouble._
 import it.unibo.casestudy.utils.Variable.V
-import it.unibo.casestudy.DesIncarnation
-import it.unibo.casestudy.utils.ExperimentConstant
 import it.unibo.rl.model.{QRL, QRLImpl}
 
 import java.time.Instant
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import scala.util.Random
 
@@ -103,7 +104,7 @@ class RLRoundEvaluation(
   }
 
   private def reward(deltaTime: FiniteDuration): Double = {
-    val result = if (state.history.exists(_ != Same)) { // before: state.history.exists(_ != Same)
+    val result = if (state.history.headOption.exists(_ != Same)) { // before: state.history.exists(_ != Same)
       -weightForConvergence * (deltaTime / EnergySaving.next)
     } else {
       -(1 - (deltaTime / EnergySaving.next)) * (1 - weightForConvergence)
@@ -131,17 +132,7 @@ object RLRoundEvaluation {
     globalQ = QRLFamily.QFunction(Set(EnergySaving, FullSpeed, Normal))
   }
 
-  sealed abstract class WeakUpAction(val next: FiniteDuration)
-  case object EnergySaving extends WeakUpAction(1 seconds)
-  case object FullSpeed extends WeakUpAction(100 milliseconds)
-  case object Normal extends WeakUpAction(200 milliseconds)
-
-  trait OutputDirection
-  case object Same extends OutputDirection
-  case object RisingUp extends OutputDirection
-  case object RisingDown extends OutputDirection
-
-  case class State(currentSetting: WeakUpAction, history: Seq[OutputDirection])
+  def printCurrentTable(): String = QRLFamily.storeQ(globalQ)
 
   class Configuration(
       val gamma: V[Double],
