@@ -1,0 +1,11 @@
+{
+  "greedy": 50,
+  "training": 150,
+  "gamma": [0.99],
+  "alphaBeta": [[0.1,0.1], [0.5, 0.5]],
+  "epsilon": [0.2, 0.4],
+  "window": [5, 7, 9],
+  "stableWeight": [0.97, 0.96],
+  "program": "gradient",
+  "simulation": "multiswap"
+}
