@@ -4,11 +4,10 @@ import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.Simulation
 import it.unibo.casestudy.Simulation.TicksAndOutput
 import it.unibo.casestudy.event.RLRoundEvaluation.Configuration
-import it.unibo.casestudy.event.{AdjustableEvaluation, Elements, RLRoundEvaluation, RoundAtEach}
+import it.unibo.casestudy.event.{AdjustableEvaluation, RLRoundEvaluation, RoundAtEach}
 import it.unibo.casestudy.launch.LaunchConstant._
 import it.unibo.casestudy.utils.ExperimentTrace.storeInCsv
 import it.unibo.casestudy.utils.{ExperimentTrace, Memoize, Variable}
-import scribe.Level
 import scribe.output._
 import upickle.default._
 
@@ -81,17 +80,21 @@ object Main extends App {
       fireLogic = id => AdjustableEvaluation(id, program, zero, delta, max, delta),
       "adhoc"
     ).perform(0)
+  var recordError = Seq.empty[Double] // error progression as episodes increases
+  var recordTotalTicks = Seq.empty[Double] // ticks progression as episode increases
 
   scribe.warn(bgBrightRed(s"Multiple simulations.. total = ${configurations.total}"))
   // Loop for other rl based simulation
   for {
-    gamma <- configurations.gamma
-    (alpha, beta) <- configurations.alphaBeta
-    initialEps <- configurations.epsilon
-    window <- configurations.window
-    seed <- 1 to configurations.seeds
-    weight <- configurations.stableWeight
+    gamma <- configurations.gamma.iterator
+    (alpha, beta) <- configurations.alphaBeta.iterator
+    initialEps <- configurations.epsilon.iterator
+    window <- configurations.window.iterator
+    seed <- (1 to configurations.seeds).iterator
+    weight <- configurations.stableWeight.iterator
   } {
+    recordError = Seq.empty[Double] // error progression as episodes increases
+    recordTotalTicks = Seq.empty[Double] // ticks progression as episode increases
     val configurationName =
       s"$gamma-$alpha-$beta-$initialEps-$window-$weight-$seed"
     scribe.warn(out(bgBrightCyan(s"Simulation with: " + configurationName)))
@@ -129,8 +132,6 @@ object Main extends App {
     }.andThen(_.updateVariables().reset().moveTickTo(random.nextInt(1000)))
     // //)
     // used to clear the variables at the begging of each learning process
-    var recordError = Seq.empty[Double] // error progression as episodes increases
-    var recordTotalTicks = Seq.empty[Double] // ticks progression as episode increases
     buildSimulation(
       fireLogic = rlRoundFunction,
       configurationName

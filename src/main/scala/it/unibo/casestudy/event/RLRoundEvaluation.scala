@@ -39,7 +39,6 @@ class RLRoundEvaluation(
     val seed: Int = 0
 ) extends RoundEvent {
   self =>
-  ElementsA.list = node :: ElementsA.list
   import rlConfig._
   protected var q: QRLFamily.QFunction = globalQ
   protected var oldValue: Double = Double.PositiveInfinity
@@ -193,8 +192,4 @@ object RLRoundEvaluation {
       new Configuration(gamma, alpha, beta, epsilon, learn)
   }
   val nextFireNoise = 1000 // increase randomness in next device fire
-}
-
-object ElementsA {
-  var list = List[ID]()
 }
