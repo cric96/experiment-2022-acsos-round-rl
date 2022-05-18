@@ -1,11 +1,13 @@
 package it.unibo.casestudy.launch
 
 import com.github.tototoshi.csv.CSVReader
+import it.unibo.casestudy.launch.Analysis.{imageFolder, resultFolder}
 import it.unibo.casestudy.launch.LaunchConstant._
 import org.nspl._
 import org.nspl.awtrenderer._
 import scribe.Level
 import it.unibo.casestudy.utils.UnsafeProduct._
+
 import java.io.File
 
 /** A script used to produce plot and a brief analysis file. By default, it produces:
@@ -32,7 +34,7 @@ object Analysis extends App {
   private val bluishGreen = line(color = Color(0, 158, 115))
   // extract all error and ticks at the end
   private var experimentLinesResult: Seq[String] = Seq("name,ticks,error")
-  private val toSample = 50 // one plot each 100 experiments
+  private val toSample = 10 // one plot each 100 experiments
   private val regex = raw"(.*)rl-(\d+)(.*)".r
 
   def sample(name: String): Boolean = if (args.length == 1 && args(0) == "sample") {
@@ -41,63 +43,72 @@ object Analysis extends App {
     true
   }
   private val toSecondConversion = 1000.0
-  private val resultFolder = os.pwd / LaunchConstant.resFolder
+  private val resultFolder = LaunchConstant.resFolder
   private val imageFolder = os.pwd / LaunchConstant.imageFolder
 
   if (os.exists(imageFolder)) { os.remove.all(imageFolder) }
   os.makeDir.all(imageFolder)
-  val allFiles = os.list(resultFolder).filter(os.isFile).filter(_.toString.contains(".csv"))
 
-  // Load data
-  val (_, fixed) = load(allFiles, fixedName, convertPlain).head
-  val (_, adHoc) = load(allFiles, adhocName, convertOther).head
-
-  LoggerUtil.disableIf(os.list(resultFolder).size > 1)
-
-  // One folder for each configuration
-  allExperiment(resultFolder).foreach { rlFolder =>
-    val experimentName = rlFolder.toIO.getName
-    scribe.warn(s"Handle: $experimentName")
-    val allFiles = os
-      .list(rlFolder)
-      .filter(os.isFile)
-      .filter(_.toString.contains(".csv"))
-    // One file foreach episode
-    val rl = load(allFiles, rlName, convertOther, sample)
-    val (_, error) = load(allFiles, errorName, convertSingle).head
-    val (_, totalTicks) = load(allFiles, totalTicksName, convertSingle).head
-    if (totalTicks.last > 400) { println("skip " + experimentName) }
-    else {
-      // Plots preparation
-      val errorPlot = xyplot(
-        (error, List(redLine), InLegend("Error"))
-      )(
-        par(xlab = "episode", ylab = "Root Mean Squared Error")
-      )
-      val totalTickPlot = xyplot(
-        (totalTicks, List(bluishGreen), InLegend("Average ticks per second"))
-      )(
-        par(xlab = "episode", ylab = "Ticks per seconds")
-      )
-      os.makeDir(imageFolder / experimentName)
-      // Plot storage
-      rl.foreach { case (name, data) =>
-        scribe.info(s"process: $name")
-        plotRl(imageFolder / experimentName, data, fixed, adHoc, name)
-      }
-      store(
-        svgToFile(tempFile, sequence(List(errorPlot, totalTickPlot), TableLayout(2)), width),
-        imageFolder / experimentName / s"error-and-ticks.svg"
-      )
-      store(svgToFile(tempFile, errorPlot, width), imageFolder / experimentName / s"error.svg")
-      store(svgToFile(tempFile, totalTickPlot, width), imageFolder / experimentName / s"ticks.svg")
-
-      experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
-      scribe.warn(s"End: $experimentName")
-    }
+  os.list(resultFolder).filter(os.isDir).foreach { path =>
+    producePlotIn(path, imageFolder / path.last)
   }
 
-  os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n"))
+  def producePlotIn(resultFolder: os.Path, imageFolder: os.Path): Unit = {
+    val allFiles = os.list(resultFolder).filter(os.isFile).filter(_.toString.contains(".csv"))
+
+    // Load data
+    val (_, fixed) = load(allFiles, fixedName, convertPlain).head
+    val (_, adHoc) = load(allFiles, adhocName, convertOther).head
+
+    LoggerUtil.disableIf(os.list(resultFolder).size > 1)
+    // One folder for each configuration
+    allExperiment(resultFolder).foreach { rlFolder =>
+      val experimentName = rlFolder.toIO.getName
+      scribe.warn(s"Handle: $experimentName")
+      val allFiles = os
+        .list(rlFolder)
+        .filter(os.isFile)
+        .filter(_.toString.contains(".csv"))
+      // One file foreach episode
+      val rl = load(allFiles, rlName, convertOther, sample)
+      val (_, error) = load(allFiles, errorName, convertSingle).head
+      val (_, totalTicks) = load(allFiles, totalTicksName, convertSingle).head
+      // pass as constants
+      if (totalTicks.last > 1000 || error.last > 1500) { println("skip " + experimentName) }
+      else {
+        // Plots preparation
+        val errorPlot = xyplot(
+          (error, List(redLine), InLegend("Error"))
+        )(
+          par(xlab = "episode", ylab = "Root Mean Squared Error")
+        )
+        val totalTickPlot = xyplot(
+          (totalTicks, List(bluishGreen), InLegend("Average ticks per second"))
+        )(
+          par(xlab = "episode", ylab = "Ticks per seconds")
+        )
+        os.makeDir.all(imageFolder / experimentName)
+        // Plot storage
+        rl.foreach { case (name, data) =>
+          scribe.info(s"process: $name")
+          plotRl(imageFolder / experimentName, data, fixed, adHoc, name)
+        }
+        val all = load(allFiles, rlName, convertOther)
+        aggregate(imageFolder / experimentName, all.map(_._2), fixed, adHoc, "aggreagete-view")
+        store(
+          svgToFile(tempFile, sequence(List(errorPlot, totalTickPlot), TableLayout(2)), width),
+          imageFolder / experimentName / s"error-and-ticks.svg"
+        )
+        store(svgToFile(tempFile, errorPlot, width), imageFolder / experimentName / s"error.svg")
+        store(svgToFile(tempFile, totalTickPlot, width), imageFolder / experimentName / s"ticks.svg")
+
+        experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
+        scribe.warn(s"End: $experimentName")
+      }
+    }
+
+    os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n"))
+  }
   // Utility functions
   def convertPlain(data: List[String]): PlainData =
     (data.head.toLong / toSecondConversion, data(1).toDouble, data(2).toDouble)
@@ -130,20 +141,6 @@ object Analysis extends App {
       adhoc: Seq[GeneratedData],
       label: String = ""
   ): Unit = {
-    def convert(data: Seq[Product], select: (Product) => Double) = data.map { t =>
-      (t._1[Double], select(t))
-    }
-
-    def tickPerSeconds(trace: Seq[Product]): Seq[(Double, Double)] = {
-      trace.dropRight(1).zip(trace.tail).map { case (first, second) =>
-        (first._1[Double], second._2[Double] - first._2[Double])
-      }
-    }
-    def percentage(ref: Seq[Product], current: Seq[Product], select: Product => Double): Seq[(Double, Double)] = {
-      ref.zip(current).tail.map { case (l, r) =>
-        (l._1, Math.abs((select(l) - select(r))) / select(l))
-      }
-    }
     val outputPlot = xyplot(
       (convert(fixed, _._3[Double]), List(redLine), InLegend("Periodic")),
       (convert(adhoc, _._3[Double]), List(greenLine), InLegend("Ad Hoc")),
@@ -198,9 +195,64 @@ object Analysis extends App {
     )
   }
 
+  def aggregate(
+      where: os.Path,
+      rl: Seq[Seq[GeneratedData]],
+      fixed: Seq[PlainData],
+      adhoc: Seq[GeneratedData],
+      label: String = ""
+  ): Unit = {
+    val lastGreedy = rl.drop(10) // number of training
+
+    val tickPerSecond = lastGreedy.map(tickPerSeconds(_))
+    val mean =
+      tickPerSecond
+        .reduce((acc, left) => acc.zip(left).map { case ((t, data), (_, other)) => (t, data + other) })
+        .map { case (t, data) => (t, data / tickPerSecond.size) }
+
+    val first = tickPerSecond.head.zip(mean).map { case ((t, data), (_, mu)) =>
+      (t, math.pow(data - mu, 2))
+    }
+    val variance =
+      tickPerSecond
+        .foldLeft(first) { (acc, left) =>
+          val zipped = acc.lazyZip(left).lazyZip(mean).toList
+          zipped.map { case ((t, data), (_, other), (_, mu)) =>
+            (t, data + math.pow(other - mu, 2))
+          }
+        }
+        .map { case (t, data) => (t, math.sqrt(data / tickPerSecond.size)) }
+
+    val upper = mean.zip(variance).map { case ((t, acc), (_, left)) => (t, acc + left, acc - left) }
+    val res = xyplot(
+      (mean, List(greenLine), InLegend("Average Plot")),
+      (upper, List(area(yCol2 = Some(2), color = Color.apply(0, 255, 0, 50))))
+    )(
+      par(xlab = "time", ylab = "Average Ticks")
+    )
+    store(
+      svgToFile(tempFile, res, width),
+      where / s"image-$label.svg"
+    )
+  }
   private def store(file: File, path: os.Path): Unit =
     os.copy.over(os.Path(file.toPath), path)
 
   private def tempFile = java.io.File.createTempFile("nspl", ".svg")
 
+  private def convert(data: Seq[Product], select: (Product) => Double) = data.map { t =>
+    (t._1[Double], select(t))
+  }
+
+  private def tickPerSeconds(trace: Seq[Product]): Seq[(Double, Double)] = {
+    trace.dropRight(1).zip(trace.tail).map { case (first, second) =>
+      (first._1[Double], second._2[Double] - first._2[Double])
+    }
+  }
+
+  private def percentage(ref: Seq[Product], current: Seq[Product], select: Product => Double): Seq[(Double, Double)] = {
+    ref.zip(current).tail.map { case (l, r) =>
+      (l._1, Math.abs((select(l) - select(r))) / select(l))
+    }
+  }
 }

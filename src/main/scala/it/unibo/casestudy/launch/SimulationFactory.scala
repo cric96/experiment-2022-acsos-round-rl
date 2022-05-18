@@ -13,9 +13,10 @@ object SimulationFactory {
     * @return
     *   the factory to create simulation from id and round event
     */
-  def simulationFromString(kind: String): (ID => RoundEvent) => Simulation[TicksAndOutput] = kind match {
-    case "plain" => f => new SwapSimulation(f, config = SwapSimulation.SimulationConfiguration())
-    case "multiswap" => f => new MultipleSwapSimulation(f, config = MultipleSwapSimulation.SimulationConfiguration())
+  def simulationFromString(kind: String, id: String): (ID => RoundEvent) => Simulation[TicksAndOutput] = kind match {
+    case "plain" => f => new SwapSimulation(f, config = SwapSimulation.SimulationConfiguration(), id)
+    case "multiswap" =>
+      f => new MultipleSwapSimulation(f, config = MultipleSwapSimulation.SimulationConfiguration(), id)
   }
 
   /** create a program from a string

@@ -7,6 +7,6 @@ object LaunchConstant {
   val adhocName = "adhoc"
   val errorName = "error"
   val totalTicksName = "ticks"
-  val resFolder = "res"
+  val resFolder = os.pwd / "res"
   val imageFolder = "img"
 }

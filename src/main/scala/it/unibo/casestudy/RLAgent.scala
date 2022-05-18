@@ -8,9 +8,10 @@ import upickle.default._
 
 object RLAgent {
   sealed abstract class WeakUpAction(val next: FiniteDuration)
-  case object EnergySaving extends WeakUpAction(1 seconds)
+  case object Sleep extends WeakUpAction(1 seconds)
   case object FullSpeed extends WeakUpAction(100 milliseconds)
   case object Normal extends WeakUpAction(200 milliseconds)
+  case object EnergySaving extends WeakUpAction(500 milliseconds)
 
   sealed trait OutputDirection
   case object Same extends OutputDirection

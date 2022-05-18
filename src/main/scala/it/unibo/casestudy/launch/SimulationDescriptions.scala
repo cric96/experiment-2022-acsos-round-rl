@@ -12,6 +12,8 @@ import upickle.default._
   *   the aggregate program used to run simulation, values: "gradient", "cblock", "sblock"
   * @param gamma
   *   gamma value of the Q-Learning algorithm, values > 0 < 1
+  * @param seeds
+  *   repeat the same configuration seeds time varying the random generator
   * @param alphaBeta
   *   a tuple of alpha beta values. Prefers solution in which alpha = beta. Values: > 0 < 1
   * @param stableWeight
@@ -24,6 +26,7 @@ import upickle.default._
 case class SimulationDescriptions(
     training: Int = 100,
     greedy: Int = 1,
+    seeds: Int = 1,
     simulation: String = "plain",
     program: String = "gradient",
     gamma: Seq[Double] = Seq(0.99),
@@ -32,7 +35,7 @@ case class SimulationDescriptions(
     epsilon: Seq[Double] = Seq(0.2),
     window: Seq[Int] = Seq(5)
 ) {
-  def total: Int = gamma.size * alphaBeta.size * epsilon.size * window.size * stableWeight.size
+  def total: Int = gamma.size * alphaBeta.size * epsilon.size * window.size * stableWeight.size * seeds
 }
 
 object SimulationDescriptions {

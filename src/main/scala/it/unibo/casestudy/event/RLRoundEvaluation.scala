@@ -3,7 +3,7 @@ import it.unibo.casestudy.DesIncarnation
 import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.event.RLRoundEvaluation._
 import it.unibo.casestudy.RLAgent.{Normal, State, _}
-import it.unibo.casestudy.utils.ExperimentConstant
+import it.unibo.casestudy.utils.{ExperimentConstant, Variable}
 import it.unibo.casestudy.utils.RichDouble._
 import it.unibo.casestudy.utils.Variable.V
 import it.unibo.rl.model.{QRL, QRLImpl}
@@ -39,19 +39,19 @@ class RLRoundEvaluation(
     val seed: Int = 0
 ) extends RoundEvent {
   self =>
+  ElementsA.list = node :: ElementsA.list
   import rlConfig._
   protected var q: QRLFamily.QFunction = globalQ
   protected var oldValue: Double = Double.PositiveInfinity
   protected var state: State = State(FullSpeed, Seq.empty[OutputDirection])
   protected var reinforcementLearningProcess: QRLFamily.RealtimeQLearning =
     QRLFamily.RealtimeQLearning(gamma, q, QRL.StaticParameters(epsilon, alpha, beta))
-  implicit val random = RLRoundEvaluation.random
   override def act(network: DesIncarnation.NetworkSimulator): Option[DesIncarnation.Event] = {
+    implicit val random: Random = RLRoundEvaluation.random
     // ARRANGE
     val context = network.context(node)
     // PAY ATTENTION! THE DELTA TIME MUST BE PERCEIVED BEFORE THE ROUND EXECUTION!
     val deltaTime = context.sense[FiniteDuration]("LSNS_DELTA_TIME").get
-
     val currentHistory = state.history
     reinforcementLearningProcess.setState(state)
     // ROUND EVALUATION
@@ -64,6 +64,8 @@ class RLRoundEvaluation(
     } else {
       reinforcementLearningProcess.takeGreedyAction(q)
     }
+
+    network.chgSensorValue("dt", Set(node), action.next)
     val nextState = State(action, (direction +: currentHistory).take(temporalWindow))
     val rewardValue = reward(deltaTime)
     // IMPROVE
@@ -103,6 +105,20 @@ class RLRoundEvaluation(
     this
   }
 
+  def moveTickTo(millisToAdd: Int): RLRoundEvaluation = {
+    new RLRoundEvaluation(
+      node,
+      program,
+      when.plusMillis(millisToAdd),
+      temporalWindow,
+      weightForConvergence,
+      rlConfig
+    ) {
+      this.q = self.q
+      this.reinforcementLearningProcess = self.reinforcementLearningProcess
+    }
+  }
+
   private def reward(deltaTime: FiniteDuration): Double = {
     val result = if (state.history.headOption.exists(_ != Same)) { // before: state.history.exists(_ != Same)
       -weightForConvergence * (deltaTime / EnergySaving.next)
@@ -112,7 +128,9 @@ class RLRoundEvaluation(
     result
   }
 
-  private def outputTemporalDirection(current: Double): OutputDirection = if (current ~= oldValue) {
+  private def outputTemporalDirection(current: Double): OutputDirection = if (
+    (current ~= oldValue) || current.isInfinite && oldValue.isInfinite
+  ) {
     Same
   } else if (current > oldValue) {
     RisingUp
@@ -127,9 +145,10 @@ object RLRoundEvaluation {
   private[RLRoundEvaluation] var globalQ: QRLFamily.QFunction = _
   reset(0)
 
-  def reset(seed: Int): Unit = {
+  def reset(seed: Int): Random = {
     random = new Random(seed)
-    globalQ = QRLFamily.QFunction(Set(EnergySaving, FullSpeed, Normal))
+    globalQ = QRLFamily.QFunction(Set(Sleep, EnergySaving, FullSpeed, Normal))
+    random
   }
 
   def printCurrentTable(): String = QRLFamily.storeQ(globalQ)
@@ -143,6 +162,24 @@ object RLRoundEvaluation {
   ) {
     def update(): Unit = gamma :: alpha :: epsilon :: learn :: beta :: Nil foreach (_.next())
     override def toString = s"Configuration($gamma, $alpha, $beta, $epsilon, $learn)"
+
+    def canEqual(other: Any): Boolean = other.isInstanceOf[Configuration]
+
+    override def equals(other: Any): Boolean = other match {
+      case that: Configuration =>
+        (that canEqual this) &&
+          gamma == that.gamma &&
+          alpha == that.alpha &&
+          beta == that.beta &&
+          epsilon == that.epsilon &&
+          learn == that.learn
+      case _ => false
+    }
+
+    override def hashCode(): Int = {
+      val state = Seq(gamma, alpha, beta, epsilon, learn)
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
   }
 
   object Configuration {
@@ -156,4 +193,8 @@ object RLRoundEvaluation {
       new Configuration(gamma, alpha, beta, epsilon, learn)
   }
   val nextFireNoise = 1000 // increase randomness in next device fire
+}
+
+object ElementsA {
+  var list = List[ID]()
 }

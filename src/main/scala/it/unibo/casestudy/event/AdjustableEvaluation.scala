@@ -38,10 +38,12 @@ case class AdjustableEvaluation(
     network.progress(node, program)
     val netExport: Option[EXPORT] = network.`export`(node)
     val nextFire = (localData, netExport) match {
-      case (Some(prev), Some(curr)) if (prev.root() == curr.root()) && (dt + dt < maxDt) => dt + dt
+      case (Some(prev), Some(curr)) if (prev.root() == curr.root()) && (dt + dt <= maxDt) => dt + dt
       case (Some(prev), Some(curr)) if prev.root() != curr.root() => startWith
       case _ => dt
     }
+
+    network.chgSensorValue("dt", Set(node), nextFire)
     val context = network.context(node)
     network.chgSensorValue(
       ExperimentConstant.RoundCount,

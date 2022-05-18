@@ -19,6 +19,7 @@ import scala.concurrent.duration.FiniteDuration
   *   the period
   */
 case class RoundAtEach(node: ID, program: EXECUTION, when: Instant, dt: FiniteDuration) extends RoundEvent {
+  Elements.list = node :: Elements.list
   override def act(network: DesIncarnation.NetworkSimulator): Option[DesIncarnation.Event] = {
     network.progress(node, program)
     val context = network.context(node)
@@ -29,4 +30,8 @@ case class RoundAtEach(node: ID, program: EXECUTION, when: Instant, dt: FiniteDu
     )
     Option(this.copy(when = when.plusMillis(dt.toMillis)))
   }
+}
+
+object Elements {
+  var list = List[ID]()
 }

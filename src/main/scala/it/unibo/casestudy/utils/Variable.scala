@@ -12,6 +12,8 @@ trait Variable[T] {
   def next(): Variable[T] // side effect
 
   override def toString: String = s"V($value)"
+
+  override def hashCode(): Int = value.hashCode()
 }
 
 object Variable {

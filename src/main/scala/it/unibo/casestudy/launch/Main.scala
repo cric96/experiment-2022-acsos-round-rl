@@ -4,7 +4,7 @@ import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.Simulation
 import it.unibo.casestudy.Simulation.TicksAndOutput
 import it.unibo.casestudy.event.RLRoundEvaluation.Configuration
-import it.unibo.casestudy.event.{AdjustableEvaluation, RLRoundEvaluation, RoundAtEach}
+import it.unibo.casestudy.event.{AdjustableEvaluation, Elements, RLRoundEvaluation, RoundAtEach}
 import it.unibo.casestudy.launch.LaunchConstant._
 import it.unibo.casestudy.utils.ExperimentTrace.storeInCsv
 import it.unibo.casestudy.utils.{ExperimentTrace, Memoize, Variable}
@@ -49,27 +49,38 @@ object Main extends App {
     read[SimulationDescriptions](os.read.lines(file).mkString.stripMargin)
   }
   LoggerUtil.disableIf(configurations.total > 1)
-  def buildSimulation(fireLogic: ID => RoundEvent): Simulation[TicksAndOutput] =
-    SimulationFactory.simulationFromString(configurations.simulation)(fireLogic)
-  val resultFolder = os.pwd / resFolder
+  def buildSimulation(fireLogic: ID => RoundEvent, simId: String): Simulation[TicksAndOutput] =
+    SimulationFactory.simulationFromString(configurations.simulation, simId)(fireLogic)
+  val time = java.time.LocalDateTime
+    .now()
+    .toString
+    .replace("T", "-")
+    .replace("-", "")
+    .replace(":", "")
+    .replace(".", "-")
+  val resultFolder = resFolder / time
   if (os.exists(resultFolder)) { os.remove.all(resultFolder) }
   os.makeDir.all(resultFolder)
   // Constants
   val program = SimulationFactory.programFromString(configurations.program)
   val delta = 100 milliseconds
   val zero = Instant.ofEpochMilli(0)
-  val max = 2 seconds
+  val max = 1 seconds
+
+  val random = RLRoundEvaluation.reset(0)
   /// Simulations
   // standard simulation a.k.a. periodic
   val (standardTicks, standardOutput) =
     buildSimulation(
-      fireLogic = id => RoundAtEach(id, program, zero, delta)
-    ).perform()
+      fireLogic = id => RoundAtEach(id, program, zero, delta),
+      "standard"
+    ).perform(0)
   // adhoc simulation
   val (adHocTicks, adHocOutput) =
     buildSimulation(
-      fireLogic = id => AdjustableEvaluation(id, program, zero, delta, max, delta)
-    ).perform()
+      fireLogic = id => AdjustableEvaluation(id, program, zero, delta, max, delta),
+      "adhoc"
+    ).perform(0)
 
   scribe.warn(bgBrightRed(s"Multiple simulations.. total = ${configurations.total}"))
   // Loop for other rl based simulation
@@ -78,10 +89,11 @@ object Main extends App {
     (alpha, beta) <- configurations.alphaBeta
     initialEps <- configurations.epsilon
     window <- configurations.window
+    seed <- 1 to configurations.seeds
     weight <- configurations.stableWeight
   } {
     val configurationName =
-      s"$gamma-$alpha-$beta-$initialEps-$window-$weight"
+      s"$gamma-$alpha-$beta-$initialEps-$window-$weight-$seed"
     scribe.warn(out(bgBrightCyan(s"Simulation with: " + configurationName)))
     def epsilon() = Variable.linearDecay(initialEps, initialEps / configurations.training)
     def learn() = Variable.changeAfter(configurations.training, true, false)
@@ -111,15 +123,19 @@ object Main extends App {
       configurationName: String
   ): Unit = {
     os.makeDir(resultFolder / configurationName)
-    RLRoundEvaluation.reset(0)
+    val random = RLRoundEvaluation.reset(configurationName.hashCode)
     val rlRoundFunction = Memoize[ID, RLRoundEvaluation] { id =>
-      new RLRoundEvaluation(id, program, zero, temporalWindow, stableWeight, config)
-    }.andThen(_.updateVariables().reset()) // used to clear the variables at the begging of each learning process
+      new RLRoundEvaluation(id, program, zero.plusMillis(id), temporalWindow, stableWeight, config)
+    }.andThen(_.updateVariables().reset().moveTickTo(random.nextInt(1000)))
+    // //)
+    // used to clear the variables at the begging of each learning process
     var recordError = Seq.empty[Double] // error progression as episodes increases
     var recordTotalTicks = Seq.empty[Double] // ticks progression as episode increases
     buildSimulation(
-      fireLogic = rlRoundFunction
+      fireLogic = rlRoundFunction,
+      configurationName
     ).repeat(trainingEpisodes + greedy) { (data, ep) =>
+      RLRoundEvaluation.reset(configurationName.hashCode.hashCode() + ep)
       val rlGradient = data._2
       val rlTicks = data._1
       // evaluates the error performed by each node in the system
@@ -133,7 +149,6 @@ object Main extends App {
           (second._2 - first._2)
         }
         .sum / totalTicks.size
-
       scribe.info(
         out(
           blue(s"episode: "),

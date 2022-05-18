@@ -8,11 +8,11 @@ import it.unibo.casestudy.utils.ExperimentTrace
   *   the data exported from one simulated episode
   */
 trait Simulation[E] {
-  def perform(): E
+  def perform(episode: Int): E
   final def repeat(times: Int)(progressEvaluation: (E, Int) => Unit): Seq[E] =
     LazyList
-      .continually(perform())
-      .zipWithIndex
+      .iterate(0)(_ + 1)
+      .map(i => (perform(i), i))
       .tapEach { case (index, elem) => progressEvaluation(index, elem) }
       .tapEach(_ => updateAfter())
       .map(_._1)

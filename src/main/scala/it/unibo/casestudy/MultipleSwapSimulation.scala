@@ -2,7 +2,7 @@ package it.unibo.casestudy
 
 import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.Simulation.{TicksAndOutput, WorldSetting}
-import it.unibo.casestudy.event.ChangeSourceAt
+import it.unibo.casestudy.event.{ChangeSourceAt, Render}
 import it.unibo.casestudy.utils.Variable.V
 import it.unibo.casestudy.utils.{DesUtils, ExperimentConstant}
 
@@ -17,11 +17,14 @@ import scala.language.postfixOps
   * @param config
   *   the configuration of the simulation
   */
-class MultipleSwapSimulation(fireLogic: ID => RoundEvent, config: MultipleSwapSimulation.SimulationConfiguration)
-    extends Simulation[TicksAndOutput] {
+class MultipleSwapSimulation(
+    fireLogic: ID => RoundEvent,
+    config: MultipleSwapSimulation.SimulationConfiguration,
+    simId: String
+) extends Simulation[TicksAndOutput] {
   import config._
   import config.worldSetting._
-  override def perform(): TicksAndOutput = {
+  override def perform(i: Int): TicksAndOutput = {
     val world = StandardWorld.withRange(size, size, range, Set.empty, seeds)
     world.clearExports()
     val leftmost = world.ids.min
@@ -30,10 +33,11 @@ class MultipleSwapSimulation(fireLogic: ID => RoundEvent, config: MultipleSwapSi
     val lastCorner = leftmost + size - 1
     val center = leftmost + rightmost / 2
     val des = new DesSimulator(world)
-    val fireEvents = des.network.ids.map(fireLogic(_))
+    des.network.addSensor("dt", RLAgent.FullSpeed.next)
+    val fireEvents = des.network.idArray.map(fireLogic(_))
     val roundCount =
       Exports.NumericValueExport.fromSensor[Int](des.now, sampleFrequency, ExperimentConstant.RoundCount)
-
+    val render = Render(des.now, 100, simId, i)
     val totalGradient = Exports.NumericValueExport.`export`[Double](des.now, sampleFrequency)
     val turnOnRLeft = ChangeSourceAt(des.now, center, value = true)
     val toTurn = leftmost :: rightmost :: otherCorner :: lastCorner :: Nil
@@ -46,6 +50,7 @@ class MultipleSwapSimulation(fireLogic: ID => RoundEvent, config: MultipleSwapSi
     des.schedule(turnOnRLeft)
     des.schedule(roundCount)
     des.schedule(totalGradient)
+    //des.schedule(render)
     turnsAfter.foreach(des.schedule)
     fireEvents.foreach(des.schedule)
     lastSwitch.foreach(des.schedule)

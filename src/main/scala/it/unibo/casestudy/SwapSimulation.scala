@@ -17,10 +17,11 @@ import scala.language.postfixOps
   * @param config
   *   the configuration of the simulation
   */
-class SwapSimulation(fireLogic: ID => RoundEvent, config: SimulationConfiguration) extends Simulation[TicksAndOutput] {
+class SwapSimulation(fireLogic: ID => RoundEvent, config: SimulationConfiguration, simId: String)
+    extends Simulation[TicksAndOutput] {
   import config._
   import config.worldSetting._
-  override def perform(): TicksAndOutput = {
+  override def perform(i: Int): TicksAndOutput = {
     val world = StandardWorld.withRange(size, size, range, Set.empty, seeds)
     val leftmost = world.ids.min
     val rightmost = world.ids.max
