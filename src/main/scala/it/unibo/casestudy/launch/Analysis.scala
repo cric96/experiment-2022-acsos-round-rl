@@ -1,7 +1,6 @@
 package it.unibo.casestudy.launch
 
 import com.github.tototoshi.csv.CSVReader
-import it.unibo.casestudy.launch.Analysis.{imageFolder, resultFolder}
 import it.unibo.casestudy.launch.LaunchConstant._
 import org.nspl._
 import org.nspl.awtrenderer._
@@ -62,6 +61,7 @@ object Analysis extends App {
 
     LoggerUtil.disableIf(os.list(resultFolder).size > 1)
     // One folder for each configuration
+    var experimentsResult = Seq.empty[(String, Double, Double)]
     allExperiment(resultFolder).foreach { rlFolder =>
       val experimentName = rlFolder.toIO.getName
       scribe.warn(s"Handle: $experimentName")
@@ -93,7 +93,8 @@ object Analysis extends App {
           scribe.info(s"process: $name")
           plotRl(imageFolder / experimentName, data, fixed, adHoc, name)
         }
-        val all = load(allFiles, rlName, convertOther)
+        val all = load(allFiles, rlName, convertOther).sortBy(_._1.drop(3).toInt)
+
         aggregate(imageFolder / experimentName, all.map(_._2), fixed, adHoc, "aggreagete-view")
         store(
           svgToFile(tempFile, sequence(List(errorPlot, totalTickPlot), TableLayout(2)), width),
@@ -101,13 +102,17 @@ object Analysis extends App {
         )
         store(svgToFile(tempFile, errorPlot, width), imageFolder / experimentName / s"error.svg")
         store(svgToFile(tempFile, totalTickPlot, width), imageFolder / experimentName / s"ticks.svg")
-
-        experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
+        experimentsResult = experimentsResult :+ (experimentName, totalTicks.last, error.last)
+        //experimentLinesResult = experimentLinesResult :+ s"$experimentName,${totalTicks.last},${error.last}"
         scribe.warn(s"End: $experimentName")
       }
     }
-
-    os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n"))
+    val storeAnalysis = experimentsResult
+      .sortBy(_._2)
+      .map { case (name, error, tick) => s"$name,$error,$tick" }
+      .mkString("\n")
+    experimentLinesResult = Seq.empty
+    os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n") + storeAnalysis)
   }
   // Utility functions
   def convertPlain(data: List[String]): PlainData =
@@ -202,36 +207,59 @@ object Analysis extends App {
       adhoc: Seq[GeneratedData],
       label: String = ""
   ): Unit = {
-    val lastGreedy = rl.drop(10) // number of training
-
+    val lastGreedy = rl.drop(250) // number of training
     val tickPerSecond = lastGreedy.map(tickPerSeconds(_))
-    val mean =
-      tickPerSecond
-        .reduce((acc, left) => acc.zip(left).map { case ((t, data), (_, other)) => (t, data + other) })
-        .map { case (t, data) => (t, data / tickPerSecond.size) }
 
-    val first = tickPerSecond.head.zip(mean).map { case ((t, data), (_, mu)) =>
-      (t, math.pow(data - mu, 2))
-    }
-    val variance =
-      tickPerSecond
-        .foldLeft(first) { (acc, left) =>
-          val zipped = acc.lazyZip(left).lazyZip(mean).toList
-          zipped.map { case ((t, data), (_, other), (_, mu)) =>
-            (t, data + math.pow(other - mu, 2))
+    def meanAndVariance(
+        greedyData: Seq[Seq[(Double, Double)]]
+    ): (Seq[(Double, Double)], Seq[(Double, Double, Double)]) = {
+      val mean =
+        greedyData
+          .reduce((acc, left) => acc.zip(left).map { case ((t, data), (_, other)) => (t, data + other) })
+          .map { case (t, data) => (t, data / greedyData.size) }
+      val first = greedyData.head.zip(mean).map { case ((t, data), (_, mu)) =>
+        (t, math.pow(data - mu, 2))
+      }
+      val variance =
+        greedyData
+          .foldLeft(first) { (acc, left) =>
+            val zipped = acc.lazyZip(left).lazyZip(mean).toList
+            zipped.map { case ((t, data), (_, other), (_, mu)) =>
+              (t, data + math.pow(other - mu, 2))
+            }
           }
-        }
-        .map { case (t, data) => (t, math.sqrt(data / tickPerSecond.size)) }
+          .map { case (t, data) => (t, math.sqrt(data / greedyData.size)) }
 
-    val upper = mean.zip(variance).map { case ((t, acc), (_, left)) => (t, acc + left, acc - left) }
-    val res = xyplot(
-      (mean, List(greenLine), InLegend("Average Plot")),
-      (upper, List(area(yCol2 = Some(2), color = Color.apply(0, 255, 0, 50))))
+      val upper = mean.zip(variance).map { case ((t, acc), (_, left)) => (t, acc + left, acc - left) }
+
+      (mean, upper)
+    }
+
+    val (meanTicks, varianceTicks) = meanAndVariance(tickPerSecond)
+    val (meanError, varianceError) = meanAndVariance(rl.map(percentage(fixed, _, _._3[Double])))
+    val resTicks = xyplot(
+      (meanTicks, List(greenLine), InLegend("Average Ticks")),
+      (varianceTicks, List(area(yCol2 = Some(2), color = Color.apply(0, 255, 0, 50))))
     )(
       par(xlab = "time", ylab = "Average Ticks")
     )
+    val resError = xyplot(
+      (meanError, List(redLine), InLegend("Average Error percentage")),
+      (varianceError, List(area(yCol2 = Some(2), color = Color.apply(255, 0, 0, 50))))
+    )(
+      par(xlab = "time", ylab = "Average Percentage")
+    )
+
+    val result = sequence(
+      List(
+        resTicks,
+        resError
+      ),
+      TableLayout(2)
+    )
+
     store(
-      svgToFile(tempFile, res, width),
+      svgToFile(tempFile, result, width),
       where / s"image-$label.svg"
     )
   }
