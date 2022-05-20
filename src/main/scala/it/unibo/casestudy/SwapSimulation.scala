@@ -3,7 +3,7 @@ package it.unibo.casestudy
 import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.Simulation.{TicksAndOutput, WorldSetting}
 import it.unibo.casestudy.SwapSimulation.SimulationConfiguration
-import it.unibo.casestudy.event.ChangeSourceAt
+import it.unibo.casestudy.event.{ChangeSourceAt, Render}
 import it.unibo.casestudy.utils.Variable.V
 import it.unibo.casestudy.utils.{DesUtils, ExperimentConstant}
 
@@ -32,10 +32,13 @@ class SwapSimulation(fireLogic: ID => RoundEvent, config: SimulationConfiguratio
     val totalGradient = Exports.NumericValueExport.`export`[Double](des.now, sampleFrequency)
     val turnOnRLeft = ChangeSourceAt(des.now, leftmost, value = true)
     val turnOnRight = event.ChangeSourceAt(des.now.plusMillis(switchAt.toMillis), rightmost, value = true)
+    val render = Render(des.now, 100, simId, i)
     des.schedule(turnOnRLeft)
     des.schedule(roundCount)
     des.schedule(totalGradient)
     des.schedule(turnOnRight)
+    //des.schedule(render)
+    des.network.addSensor("dt", RLAgent.FullSpeed.next)
     fireEvents.foreach(des.schedule)
     des.stopWhen(des.now.plusMillis(endWhen.toMillis).plusNanos(1)) // enable safe conclusion
     DesUtils.consume(des)

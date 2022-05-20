@@ -42,7 +42,7 @@ import scala.language.postfixOps
 object Main extends App {
   // Load the configuration that will be launched by the simulation, if no configuration is passed it will launched the default one
   val configurations = if (args.length != 1) {
-    SimulationDescriptions()
+    SimulationDescriptions(training = 10, window = Seq(7))
   } else {
     val file = os.pwd / args(0)
     read[SimulationDescriptions](os.read.lines(file).mkString.stripMargin)
@@ -136,7 +136,7 @@ object Main extends App {
       fireLogic = rlRoundFunction,
       configurationName
     ).repeat(trainingEpisodes + greedy) { (data, ep) =>
-      RLRoundEvaluation.reset(configurationName.hashCode.hashCode() + ep)
+      RLRoundEvaluation.updateRandom(configurationName.hashCode.hashCode() + ep + 1)
       val rlGradient = data._2
       val rlTicks = data._1
       // evaluates the error performed by each node in the system
@@ -172,7 +172,6 @@ object Main extends App {
     storeSequence(resultFolder / configurationName / s"$errorName.csv", recordError, errorName)
     storeSequence(resultFolder / configurationName / s"$totalTicksName.csv", recordTotalTicks, totalTicksName)
     store(resultFolder / configurationName / "q", RLRoundEvaluation.printCurrentTable())
-
   }
   // Store standard performance
   storeInCsv(
@@ -233,6 +232,4 @@ object Main extends App {
   def totalTicksPerTrack(ticks: ExperimentTrace[Map[ID, Int]]): ExperimentTrace[Int] = ticks.convert { case (i, d) =>
     d.values.sum
   }
-
-  Analysis.main(Array("sample"))
 }

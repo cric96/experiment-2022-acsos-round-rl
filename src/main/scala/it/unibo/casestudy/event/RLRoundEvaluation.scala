@@ -147,6 +147,11 @@ object RLRoundEvaluation {
   def reset(seed: Int): Random = {
     random = new Random(seed)
     globalQ = QRLFamily.QFunction(Set(Sleep, EnergySaving, FullSpeed, Normal))
+    //QRLFamily.loadFromMap(globalQ, os.read(os.pwd / "q"))
+    random
+  }
+  def updateRandom(seed: Int): Random = {
+    random = new Random(seed)
     random
   }
 

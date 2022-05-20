@@ -17,4 +17,6 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" 
 
 addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main config.json")
 addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main config-multi.json")
+addCommandAlias("startGradientMultiSeeds", "runMain it.unibo.casestudy.launch.Main config-multi-seeds.json")
 addCommandAlias("startBlockC", "runMain it.unibo.casestudy.launch.Main config-c.json")
+addCommandAlias("startBlockLocal", "runMain it.unibo.casestudy.launch.Main base-config.json")
