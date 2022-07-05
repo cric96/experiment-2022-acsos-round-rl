@@ -1,4 +1,4 @@
-# Experiments for DISCOLI 2022
+# Experiments for ACSOS 2022
 
 This repository contains the experiments done for the integration of Reinforcement Learning in the Aggregate Computing Stack. In particular, here we deploy Distributed Q-Learning to reduce the power consumption of the entire system.
 ## Requirements:
