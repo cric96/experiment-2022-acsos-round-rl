@@ -17,10 +17,6 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" 
 
 addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main configurations/config.json")
 addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main configurations/config-multi.json")
-addCommandAlias(
-  "startGradientMultiSeeds",
-  "runMain it.unibo.casestudy.launch.Main configurations/config-multi-seeds.json"
-)
 addCommandAlias("startBlockC", "runMain it.unibo.casestudy.launch.Main configurations/config-c.json")
 addCommandAlias("startBlockLocal", "runMain it.unibo.casestudy.launch.Main configurations/base-config.json")
 // Use with sbt "renderResult file/runtime.json <program> <scenario> <snapshot dt>
