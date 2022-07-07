@@ -1,16 +1,15 @@
 package it.unibo.casestudy.launch
 import com.github.tototoshi.csv.CSVWriter
 import it.unibo.casestudy.DesIncarnation._
-import it.unibo.casestudy.Simulation
-import it.unibo.casestudy.Simulation.TicksAndOutput
-import it.unibo.casestudy.event.RLRoundEvaluation.Configuration
-import it.unibo.casestudy.event.{AdjustableEvaluation, RLRoundEvaluation, RoundAtEach}
+import it.unibo.casestudy.event.rl.{RLConfiguration, RLRoundEvaluation, RLRuntimeInformation}
+import it.unibo.casestudy.event.{AdjustableEvaluation, RoundAtEach}
 import it.unibo.casestudy.launch.LaunchConstant._
 import it.unibo.casestudy.utils.ExperimentTrace.storeInCsv
 import it.unibo.casestudy.utils.{ExperimentTrace, Memoize, Variable}
+import os.RelPath
 import scribe.output._
 import upickle.default._
-
+import LaunchUtils._
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
@@ -42,14 +41,12 @@ import scala.language.postfixOps
 object Main extends App {
   // Load the configuration that will be launched by the simulation, if no configuration is passed it will launched the default one
   val configurations = if (args.length != 1) {
-    SimulationDescriptions(training = 10, window = Seq(7))
+    SimulationDescriptions()
   } else {
-    val file = os.pwd / args(0)
+    val file = os.pwd / RelPath(args(0))
     read[SimulationDescriptions](os.read.lines(file).mkString.stripMargin)
   }
   LoggerUtil.disableIf(configurations.total > 1)
-  def buildSimulation(fireLogic: ID => RoundEvent, simId: String): Simulation[TicksAndOutput] =
-    SimulationFactory.simulationFromString(configurations.simulation, simId)(fireLogic)
   val time = java.time.LocalDateTime
     .now()
     .toString
@@ -57,7 +54,7 @@ object Main extends App {
     .replace("-", "")
     .replace(":", "")
     .replace(".", "-")
-  val resultFolder = resFolder / time
+  val resultFolder = resFolder / s"${configurations.simulation}-${configurations.program}-$time"
   if (os.exists(resultFolder)) { os.remove.all(resultFolder) }
   os.makeDir.all(resultFolder)
   // Constants
@@ -66,17 +63,18 @@ object Main extends App {
   val zero = Instant.ofEpochMilli(0)
   val max = 1 seconds
 
-  val random = RLRoundEvaluation.reset(0)
   /// Simulations
   // standard simulation a.k.a. periodic
   val (standardTicks, standardOutput) =
     buildSimulation(
+      configurations.simulation,
       fireLogic = id => RoundAtEach(id, program, zero, delta),
       "standard"
     ).perform(0)
   // adhoc simulation
   val (adHocTicks, adHocOutput) =
     buildSimulation(
+      configurations.simulation,
       fireLogic = id => AdjustableEvaluation(id, program, zero, delta, max, delta),
       "adhoc"
     ).perform(0)
@@ -100,7 +98,7 @@ object Main extends App {
     scribe.warn(out(bgBrightCyan(s"Simulation with: " + configurationName)))
     def epsilon() = Variable.linearDecay(initialEps, initialEps / configurations.training)
     def learn() = Variable.changeAfter(configurations.training, true, false)
-    def configuration = Configuration(gamma, alpha, beta, epsilon(), learn())
+    def configuration = RLConfiguration(gamma, alpha, beta, epsilon(), learn())
     val clock = System.currentTimeMillis()
     runCompleteRlSimulation(
       configuration,
@@ -118,7 +116,7 @@ object Main extends App {
   }
   // Consume an entire rl based simulation, producing the data required for plot information
   def runCompleteRlSimulation(
-      config: => Configuration,
+      config: => RLConfiguration,
       temporalWindow: Int,
       trainingEpisodes: Int,
       greedy: Int,
@@ -128,11 +126,12 @@ object Main extends App {
     os.makeDir(resultFolder / configurationName)
     val random = RLRoundEvaluation.reset(configurationName.hashCode)
     val rlRoundFunction = Memoize[ID, RLRoundEvaluation] { id =>
-      new RLRoundEvaluation(id, program, zero.plusMillis(id), temporalWindow, stableWeight, config)
-    }.andThen(_.updateVariables().reset().moveTickTo(random.nextInt(1000)))
+      new RLRoundEvaluation(id, program, zero, temporalWindow, stableWeight, config)
+    }.andThen(_.updateVariables().reset().moveTickTo(random.nextInt(RLRoundEvaluation.nextFireNoise)))
     // //)
     // used to clear the variables at the begging of each learning process
     buildSimulation(
+      configurations.simulation,
       fireLogic = rlRoundFunction,
       configurationName
     ).repeat(trainingEpisodes + greedy) { (data, ep) =>
@@ -171,7 +170,8 @@ object Main extends App {
     }.last // consume the stream
     storeSequence(resultFolder / configurationName / s"$errorName.csv", recordError, errorName)
     storeSequence(resultFolder / configurationName / s"$totalTicksName.csv", recordTotalTicks, totalTicksName)
-    store(resultFolder / configurationName / "q", RLRoundEvaluation.printCurrentTable())
+    val runtimeInformation = RLRuntimeInformation(RLRoundEvaluation.printCurrentTable(), temporalWindow)
+    store(resultFolder / configurationName / "runtime.json", write(runtimeInformation))
   }
   // Store standard performance
   storeInCsv(

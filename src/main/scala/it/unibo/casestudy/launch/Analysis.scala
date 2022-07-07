@@ -26,7 +26,9 @@ object Analysis extends App {
   val mappedArgs = args.indices.zip(args).toMap
   // Constants
   private val width = 400
-  private val training = mappedArgs.get(1).map(_.toInt).getOrElse(500)
+  private val training = mappedArgs.get(1).map(_.toInt).getOrElse(0)
+  private val greedyBoundError = mappedArgs.get(2).map(_.toInt).getOrElse(Int.MaxValue)
+  private val greedyBoundTick = mappedArgs.get(3).map(_.toInt).getOrElse(Int.MaxValue)
   // line constants
   private val redLine = line(color = Color.red)
   private val greenLine = line(color = Color.green)
@@ -36,7 +38,7 @@ object Analysis extends App {
   private val bluishGreen = line(color = Color(0, 158, 115))
   // extract all error and ticks at the end
   private var experimentLinesResult: Seq[String] = Seq("name,ticks,error")
-  private val toSample = mappedArgs.get(0).map(_.toInt).getOrElse(100) // one plot each 100 experiments
+  private val toSample = mappedArgs.get(0).map(_.toInt).getOrElse(1) // one plot each experiment by default
   private val regex = raw"(.*)rl-(\d+)(.*)".r
 
   def sample(name: String): Boolean =
@@ -80,7 +82,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Average Ticks",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
     val resError = xyplot(
@@ -90,7 +94,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Average Percentage",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -112,8 +118,9 @@ object Analysis extends App {
       val greedyAverageError = error.drop(training).sum / error.drop(training).size
       val greedyAverageTick = totalTicks.drop(training).sum / totalTicks.drop(training).size
       // pass as constants
-      if (greedyAverageError > 1000 || greedyAverageTick > 1500) { println("skip " + experimentName) }
-      else {
+      if (greedyAverageError > greedyBoundError || greedyAverageTick > greedyBoundTick) {
+        println("skip " + experimentName)
+      } else {
         // Plots preparation
         val errorPlot = xyplot(
           (error, List(redLine), InLegend("Error"))
@@ -121,7 +128,9 @@ object Analysis extends App {
           par(
             xlab = "Episode",
             ylab = "Root Mean Squared Error",
-            legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+            legendDistance = 0.01 fts,
+            rightPadding = 3 fts,
+            leftPadding = 3 fts
           )
         )
         val totalTickPlot = xyplot(
@@ -130,7 +139,9 @@ object Analysis extends App {
           par(
             xlab = "Episode",
             ylab = "Ticks per seconds",
-            legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+            legendDistance = 0.01 fts,
+            rightPadding = 3 fts,
+            leftPadding = 3 fts
           )
         )
         os.makeDir.all(imageFolder / experimentName)
@@ -176,7 +187,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Total output",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -188,7 +201,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Total ticks",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -200,7 +215,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "ticks per second",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -211,7 +228,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "ticks per second",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -224,7 +243,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Percentage",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
 
@@ -260,7 +281,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Average Ticks",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
     val resError = xyplot(
@@ -270,7 +293,9 @@ object Analysis extends App {
       par(
         xlab = "Time",
         ylab = "Average Percentage",
-        legendDistance = 0.01 fts, rightPadding = 3 fts, leftPadding = 3 fts
+        legendDistance = 0.01 fts,
+        rightPadding = 3 fts,
+        leftPadding = 3 fts
       )
     )
     val result = sequence(

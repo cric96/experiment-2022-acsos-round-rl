@@ -1,18 +1,17 @@
-package it.unibo.casestudy.event
+package it.unibo.casestudy.event.rl
+
 import it.unibo.casestudy.DesIncarnation
 import it.unibo.casestudy.DesIncarnation._
-import it.unibo.casestudy.event.RLRoundEvaluation._
 import it.unibo.casestudy.RLAgent.{Normal, State, _}
-import it.unibo.casestudy.utils.{ExperimentConstant, Variable}
+import it.unibo.casestudy.event.rl.RLRoundEvaluation._
+import it.unibo.casestudy.utils.ExperimentConstant
 import it.unibo.casestudy.utils.RichDouble._
-import it.unibo.casestudy.utils.Variable.V
-import it.unibo.rl.model.{QRL, QRLImpl}
-
+import it.unibo.rl.model.QRL
+import RLConfiguration._
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import scala.util.Random
-
 /** Round evaluation that deploys reinforcement learning to tune the round frequency
   * @param node
   *   the target node
@@ -35,12 +34,12 @@ class RLRoundEvaluation(
     val when: Instant,
     val temporalWindow: Int = 5,
     val weightForConvergence: Double = 0.99,
-    rlConfig: Configuration,
-    val seed: Int = 0
+    rlConfig: RLConfiguration,
+    val seed: Int = 0,
+    val q: QRLFamily.QFunction = RLRoundEvaluation.globalQ
 ) extends RoundEvent {
   self =>
   import rlConfig._
-  protected var q: QRLFamily.QFunction = globalQ
   protected var oldValue: Double = Double.PositiveInfinity
   protected var state: State = State(FullSpeed, Seq.empty[OutputDirection])
   protected var reinforcementLearningProcess: QRLFamily.RealtimeQLearning =
@@ -58,7 +57,7 @@ class RLRoundEvaluation(
     // EVAL
     val currentValue = network.`export`(node).map(_.root[Double]()).getOrElse(Double.PositiveInfinity)
     val direction = outputTemporalDirection(currentValue)
-    val action = if (learn) {
+    val action = if (learn.value) {
       reinforcementLearningProcess.takeEpsGreedyAction(q)
     } else {
       reinforcementLearningProcess.takeGreedyAction(q)
@@ -70,25 +69,15 @@ class RLRoundEvaluation(
     // IMPROVE
     if (learn) { reinforcementLearningProcess.observeEnvAndUpdateQ(q, nextState, rewardValue) }
     // ACT
+    val nextDt = when.plusMillis(action.next.toMillis).plusNanos(random.nextInt(nextFireNoise))
     val nextEvent =
-      new RLRoundEvaluation(
-        node,
-        program,
-        when.plusMillis(action.next.toMillis).plusNanos(random.nextInt(nextFireNoise)),
-        temporalWindow,
-        weightForConvergence,
-        rlConfig
-      ) {
+      new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig) {
         this.oldValue = currentValue
         this.state = nextState
-        this.q = self.q
         this.reinforcementLearningProcess = self.reinforcementLearningProcess
       }
-    network.chgSensorValue(
-      ExperimentConstant.RoundCount,
-      Set(node),
-      network.context(node).sense[Int](ExperimentConstant.RoundCount).get + 1
-    )
+    val updatedRoundCount = network.context(node).sense[Int](ExperimentConstant.RoundCount).get + 1
+    network.chgSensorValue(ExperimentConstant.RoundCount, Set(node), updatedRoundCount)
     Some(nextEvent)
   }
 
@@ -105,15 +94,8 @@ class RLRoundEvaluation(
   }
 
   def moveTickTo(millisToAdd: Int): RLRoundEvaluation = {
-    new RLRoundEvaluation(
-      node,
-      program,
-      when.plusMillis(millisToAdd),
-      temporalWindow,
-      weightForConvergence,
-      rlConfig
-    ) {
-      this.q = self.q
+    val nextDt = when.plusMillis(millisToAdd)
+    new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig) {
       this.reinforcementLearningProcess = self.reinforcementLearningProcess
     }
   }
@@ -139,14 +121,13 @@ class RLRoundEvaluation(
 }
 
 object RLRoundEvaluation {
-  private[RLRoundEvaluation] val QRLFamily: QRLImpl[State, WeakUpAction] = new QRLImpl[State, WeakUpAction] {}
   private[RLRoundEvaluation] var random: Random = _
   private[RLRoundEvaluation] var globalQ: QRLFamily.QFunction = _
   reset(0)
 
   def reset(seed: Int): Random = {
     random = new Random(seed)
-    globalQ = QRLFamily.QFunction(Set(Sleep, EnergySaving, FullSpeed, Normal))
+    globalQ = createQ
     //QRLFamily.loadFromMap(globalQ, os.read(os.pwd / "q"))
     random
   }
@@ -156,46 +137,6 @@ object RLRoundEvaluation {
   }
 
   def printCurrentTable(): String = QRLFamily.storeQ(globalQ)
-
-  class Configuration(
-      val gamma: V[Double],
-      val alpha: V[Double],
-      val beta: V[Double],
-      val epsilon: V[Double],
-      val learn: V[Boolean] = true
-  ) {
-    def update(): Unit = gamma :: alpha :: epsilon :: learn :: beta :: Nil foreach (_.next())
-    override def toString = s"Configuration($gamma, $alpha, $beta, $epsilon, $learn)"
-
-    def canEqual(other: Any): Boolean = other.isInstanceOf[Configuration]
-
-    override def equals(other: Any): Boolean = other match {
-      case that: Configuration =>
-        (that canEqual this) &&
-          gamma == that.gamma &&
-          alpha == that.alpha &&
-          beta == that.beta &&
-          epsilon == that.epsilon &&
-          learn == that.learn
-      case _ => false
-    }
-
-    override def hashCode(): Int = {
-      val state = Seq(gamma, alpha, beta, epsilon, learn)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-    }
-  }
-
-  object Configuration {
-    def apply(
-        gamma: V[Double],
-        alpha: V[Double],
-        beta: V[Double],
-        epsilon: V[Double],
-        learn: V[Boolean] = true
-    ): Configuration =
-      new Configuration(gamma, alpha, beta, epsilon, learn)
-  }
 
   val nextFireNoise = 1000 // increase randomness in next device fire
 }

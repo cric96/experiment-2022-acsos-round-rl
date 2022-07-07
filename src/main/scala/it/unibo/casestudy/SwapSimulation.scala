@@ -26,18 +26,17 @@ class SwapSimulation(fireLogic: ID => RoundEvent, config: SimulationConfiguratio
     val leftmost = world.ids.min
     val rightmost = world.ids.max
     val des = new DesSimulator(world)
-    val fireEvents = des.network.ids.map(fireLogic(_))
+    val fireEvents = des.network.ids.toList.sorted.map(fireLogic(_))
     val roundCount =
       Exports.NumericValueExport.fromSensor[Int](des.now, sampleFrequency, ExperimentConstant.RoundCount)
     val totalGradient = Exports.NumericValueExport.`export`[Double](des.now, sampleFrequency)
     val turnOnRLeft = ChangeSourceAt(des.now, leftmost, value = true)
     val turnOnRight = event.ChangeSourceAt(des.now.plusMillis(switchAt.toMillis), rightmost, value = true)
-    val render = Render(des.now, 100, simId, i)
     des.schedule(turnOnRLeft)
     des.schedule(roundCount)
     des.schedule(totalGradient)
     des.schedule(turnOnRight)
-    //des.schedule(render)
+    renderFactory.foreach(factory => des.schedule(factory(i, simId)))
     des.network.addSensor("dt", RLAgent.FullSpeed.next)
     fireEvents.foreach(des.schedule)
     des.stopWhen(des.now.plusMillis(endWhen.toMillis).plusNanos(1)) // enable safe conclusion

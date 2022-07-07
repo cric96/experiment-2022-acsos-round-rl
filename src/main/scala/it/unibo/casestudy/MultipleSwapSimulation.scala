@@ -34,10 +34,9 @@ class MultipleSwapSimulation(
     val center = leftmost + rightmost / 2
     val des = new DesSimulator(world)
     des.network.addSensor("dt", RLAgent.FullSpeed.next)
-    val fireEvents = des.network.idArray.map(fireLogic(_))
+    val fireEvents = des.network.idArray.sorted.map(fireLogic(_))
     val roundCount =
       Exports.NumericValueExport.fromSensor[Int](des.now, sampleFrequency, ExperimentConstant.RoundCount)
-    val render = Render(des.now, 100, simId, i)
     val totalGradient = Exports.NumericValueExport.`export`[Double](des.now, sampleFrequency)
     val turnOnRLeft = ChangeSourceAt(des.now, center, value = true)
     val toTurn = leftmost :: rightmost :: otherCorner :: lastCorner :: Nil
@@ -50,7 +49,7 @@ class MultipleSwapSimulation(
     des.schedule(turnOnRLeft)
     des.schedule(roundCount)
     des.schedule(totalGradient)
-    //des.schedule(render)
+    renderFactory.foreach(factory => des.schedule(factory(i, simId)))
     turnsAfter.foreach(des.schedule)
     fireEvents.foreach(des.schedule)
     lastSwitch.foreach(des.schedule)
