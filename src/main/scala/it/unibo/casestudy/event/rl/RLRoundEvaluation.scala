@@ -196,5 +196,6 @@ object RLRoundEvaluation {
     ): Configuration =
       new Configuration(gamma, alpha, beta, epsilon, learn)
   }
+
   val nextFireNoise = 1000 // increase randomness in next device fire
 }
