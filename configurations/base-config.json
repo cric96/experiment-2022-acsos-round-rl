@@ -1,6 +1,6 @@
 {
-  "greedy": 1,
-  "training": 100,
+  "greedy": 10,
+  "training": 50,
   "gamma": [0.99],
   "alphaBeta": [[0.1,0.1]],
   "epsilon": [0.05],
