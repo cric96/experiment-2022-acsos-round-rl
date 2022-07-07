@@ -15,8 +15,11 @@ libraryDependencies += "com.lihaoyi" %% "upickle" % "1.4.3"
 libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
 libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
 
-addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main config.json")
-addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main config-multi.json")
-addCommandAlias("startGradientMultiSeeds", "runMain it.unibo.casestudy.launch.Main config-multi-seeds.json")
-addCommandAlias("startBlockC", "runMain it.unibo.casestudy.launch.Main config-c.json")
-addCommandAlias("startBlockLocal", "runMain it.unibo.casestudy.launch.Main base-config.json")
+addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main configurations/config.json")
+addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main configurations/config-multi.json")
+addCommandAlias(
+  "startGradientMultiSeeds",
+  "runMain it.unibo.casestudy.launch.Main configurations/config-multi-seeds.json"
+)
+addCommandAlias("startBlockC", "runMain it.unibo.casestudy.launch.Main configurations/config-c.json")
+addCommandAlias("startBlockLocal", "runMain it.unibo.casestudy.launch.Main configurations/base-config.json")
