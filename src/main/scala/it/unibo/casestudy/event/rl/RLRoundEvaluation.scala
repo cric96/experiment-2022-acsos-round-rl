@@ -71,7 +71,7 @@ class RLRoundEvaluation(
     // ACT
     val nextDt = when.plusMillis(action.next.toMillis).plusNanos(random.nextInt(nextFireNoise))
     val nextEvent =
-      new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig) {
+      new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig, q = q) {
         this.oldValue = currentValue
         this.state = nextState
         this.reinforcementLearningProcess = self.reinforcementLearningProcess
@@ -95,7 +95,7 @@ class RLRoundEvaluation(
 
   def moveTickTo(millisToAdd: Int): RLRoundEvaluation = {
     val nextDt = when.plusMillis(millisToAdd)
-    new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig) {
+    new RLRoundEvaluation(node, program, nextDt, temporalWindow, weightForConvergence, rlConfig, q = q) {
       this.reinforcementLearningProcess = self.reinforcementLearningProcess
     }
   }

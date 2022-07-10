@@ -14,6 +14,8 @@ libraryDependencies += "com.github.tototoshi" %% "scala-csv" % "1.3.10"
 libraryDependencies += "com.lihaoyi" %% "upickle" % "1.4.3"
 libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
 libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+libraryDependencies += "com.sksamuel.scrimage" % "scrimage-core" % "4.0.31"
+libraryDependencies += "com.sksamuel.scrimage" %% "scrimage-scala" % "4.0.31"
 
 addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main configurations/config.json")
 addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main configurations/config-multi.json")

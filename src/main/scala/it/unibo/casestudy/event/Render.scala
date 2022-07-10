@@ -1,5 +1,8 @@
 package it.unibo.casestudy.event
-import it.unibo.casestudy.{DesIncarnation, RLAgent}
+import com.sksamuel.scrimage.ImmutableImage
+import com.sksamuel.scrimage.nio.StreamingGifWriter
+import com.sksamuel.scrimage.nio.StreamingGifWriter.GifStream
+import it.unibo.casestudy.DesIncarnation
 import it.unibo.casestudy.DesIncarnation._
 import it.unibo.casestudy.utils.ExperimentConstant
 
@@ -10,7 +13,20 @@ import java.time.Instant
 import javax.imageio.ImageIO
 import scala.concurrent.duration.FiniteDuration
 
-case class Render(when: Instant, dt: Long, id: String, episode: Int, maxTime: Long = 1000) extends Event {
+case class Render(when: Instant, dt: Long, id: String, episode: Int, maxTime: Long = 1000)(
+    var endRecord: Option[Instant] = Some(when.plusSeconds(80L)),
+    gif: GifStream = {
+      if (!os.exists(os.pwd / "video" / s"$id" / s"$episode" / "frames")) {
+        os.makeDir.all(os.pwd / "video" / s"$id" / s"$episode" / "frames")
+      }
+      val writer = new StreamingGifWriter(java.time.Duration.ofMillis(100), true)
+      writer.prepareStream(
+        (os.pwd / "video" / s"$id" / s"$episode" / "video.gif").toIO.toString,
+        BufferedImage.TYPE_INT_ARGB
+      )
+    }
+) extends Event {
+
   override def act(network: DesIncarnation.NetworkSimulator): Option[DesIncarnation.Event] = {
     val sim = network.asInstanceOf[SpaceAwareSimulator]
     val contextAndPosition = sim.ids.map(id => (network.context(id), sim.space.getLocation(id)))
@@ -46,14 +62,18 @@ case class Render(when: Instant, dt: Long, id: String, episode: Int, maxTime: Lo
       g.setColor(color)
       g.fillRect(pos.x.toInt, pos.y.toInt, 5, 5)
     }
-    if (!os.exists(os.pwd / "video" / s"$id" / s"$episode")) {
-      os.makeDir.all(os.pwd / "video" / s"$id" / s"$episode")
-    }
-
+    //println(when.toEpochMilli, endRecord.toEpochMilli)
     val outFile = s"${when.toEpochMilli.toInt}".reverse.padTo(20, '0').reverse
-    val out = new File(s"video/$id/$episode/$outFile.png")
-
+    val out = new File(s"video/$id/$episode/frames/$outFile.png")
     ImageIO.write(image, "png", out)
-    Some(this.copy(when = when.plusMillis(dt)))
+    endRecord.foreach { end =>
+      if (when.toEpochMilli >= end.toEpochMilli) {
+        gif.close()
+        endRecord = None
+      } else {
+        gif.writeFrame(ImmutableImage.loader().fromFile(out))
+      }
+    }
+    Some(this.copy(when = when.plusMillis(dt))(endRecord, gif))
   }
 }

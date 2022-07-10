@@ -43,6 +43,6 @@ object VideoOutput extends App {
     fireLogic = rlRoundFunction,
     name + scenario
   )
-  simulation.attachRender((simulationIndex, id) => Render(zero, each, id, simulationIndex))
+  simulation.attachRender((simulationIndex, id) => Render(zero, each, id, simulationIndex)())
   simulation.perform(0)
 }

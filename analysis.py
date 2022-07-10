@@ -4,10 +4,12 @@ from importlib import reload
 import matplotlib.patches as mpatches
 reload(plt)
 import pandas as pd
+import sys
+
 # Fixing random state for reproducibility
 np.random.seed(19680801)
 
-analysis = pd.read_csv('analysis.csv')
+analysis = pd.read_csv(sys.argv[1])
 N = 50
 x = analysis.ticks
 y = analysis.error

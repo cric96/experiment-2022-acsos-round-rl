@@ -164,12 +164,17 @@ object Analysis extends App {
         scribe.warn(s"End: $experimentName")
       }
     }
+    def nameToBeta(name: String): Double = name.split("-").reverse.tail.head.toDouble
+    def nameToGamma(name: String): Double = name.split("-").head.toDouble
+    def nameToWindow(name: String): Double = name.split("-").reverse.tail.tail.head.toDouble
+
     val storeAnalysis = experimentsResult
       .sortBy(_._2)
-      .map { case (name, error, tick) => s"$name,$error,$tick" }
+      .map { case (name, error, tick) => (name, error, tick, nameToBeta(name)) }
+      .map { case (name, error, tick, beta) => s"$name,$error,$tick,$beta,${nameToGamma(name)},${nameToWindow(name)}" }
       .mkString("\n")
-    experimentLinesResult = Seq.empty
-    os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n") + storeAnalysis)
+    experimentLinesResult = Seq("name,ticks,error,theta,gamma,w")
+    os.write.over(imageFolder / "analysis.csv", experimentLinesResult.mkString("\n") + "\n" + storeAnalysis)
   }
   /* plotting functions */
   def plotRl(
