@@ -31,4 +31,3 @@ el = mpatches.Ellipse((450, 450), 500, 700,
 
 a.add_patch(el)
 plt.savefig('solution-g.pdf')
-plt.show()
