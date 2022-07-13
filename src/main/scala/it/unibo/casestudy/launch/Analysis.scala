@@ -48,7 +48,12 @@ object Analysis extends App {
   private val resultFolder = LaunchConstant.resFolder
   private val imageFolder = os.pwd / LaunchConstant.imageFolder
 
-  if (os.exists(imageFolder)) { os.remove.all(imageFolder) }
+  if (os.exists(imageFolder)) {
+    try os.remove.all(imageFolder)
+    catch {
+      case exc: Exception => scribe.info("Cannot remove the images")
+    }
+  }
   os.makeDir.all(imageFolder)
 
   os.list(resultFolder).filter(os.isDir).foreach { path =>

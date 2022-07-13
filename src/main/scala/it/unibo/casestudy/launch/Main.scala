@@ -78,6 +78,21 @@ object Main extends App {
       fireLogic = id => AdjustableEvaluation(id, program, zero, delta, max, delta),
       "adhoc"
     ).perform(0)
+
+  // Store standard performance
+  storeInCsv(
+    resultFolder / s"$fixedName.csv",
+    totalTicksPerTrack(standardTicks),
+    totalOutputForEachStep(standardOutput)
+  )
+  // Store adhoc performance
+  storeInCsv(
+    resultFolder / s"$adhocName.csv",
+    totalTicksPerTrack(adHocTicks),
+    totalOutputForEachStep(adHocOutput),
+    pointWiseError(standardOutput, adHocOutput)
+  )
+
   var recordError = Seq.empty[Double] // error progression as episodes increases
   var recordTotalTicks = Seq.empty[Double] // ticks progression as episode increases
 
@@ -173,19 +188,6 @@ object Main extends App {
     val runtimeInformation = RLRuntimeInformation(RLRoundEvaluation.printCurrentTable(), temporalWindow)
     store(resultFolder / configurationName / "runtime.json", write(runtimeInformation))
   }
-  // Store standard performance
-  storeInCsv(
-    resultFolder / s"$fixedName.csv",
-    totalTicksPerTrack(standardTicks),
-    totalOutputForEachStep(standardOutput)
-  )
-  // Store adhoc performance
-  storeInCsv(
-    resultFolder / s"$adhocName.csv",
-    totalTicksPerTrack(adHocTicks),
-    totalOutputForEachStep(adHocOutput),
-    pointWiseError(standardOutput, adHocOutput)
-  )
   // Utility
   // Store a data sequence as a csv file in which each data is placed in a row
   def storeSequence(where: os.Path, data: Seq[Double], name: String): Unit = {

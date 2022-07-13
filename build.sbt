@@ -21,6 +21,7 @@ addCommandAlias("startGradient", "runMain it.unibo.casestudy.launch.Main configu
 addCommandAlias("startGradientMulti", "runMain it.unibo.casestudy.launch.Main configurations/config-multi.json")
 addCommandAlias("startBlockC", "runMain it.unibo.casestudy.launch.Main configurations/config-c.json")
 addCommandAlias("startBlockLocal", "runMain it.unibo.casestudy.launch.Main configurations/base-config.json")
+addCommandAlias("startCheckScale", "runMain it.unibo.casestudy.launch.CheckScale")
 // Use with sbt "renderResult file/runtime.json <program> <scenario> <snapshot dt>
 addCommandAlias("renderResult", "runMain it.unibo.casestudy.launch.VideoOutput")
 // Use with sbt "generatePlots <sample> <training count> <max accepted error> <max accepted ticks>

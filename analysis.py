@@ -24,10 +24,9 @@ plt.xlabel('Average ticks')
 plt.ylabel('Total error')
 plt.title("Solutions")
 plt.tight_layout()
-el = mpatches.Ellipse((450, 450), 500, 700,
+el = mpatches.Ellipse((470, 380), width=400, height=800,
                       angle=30, alpha=0.5, edgecolor='b',
                       facecolor='none')
 
-
 a.add_patch(el)
-plt.savefig('solution-g.pdf')
+plt.savefig('img/solution-g.pdf')
