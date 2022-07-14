@@ -16,12 +16,12 @@ import scala.concurrent.duration.FiniteDuration
 case class Render(when: Instant, dt: Long, id: String, episode: Int, maxTime: Long = 1000)(
     var endRecord: Option[Instant] = Some(when.plusSeconds(80L)),
     gif: GifStream = {
-      if (!os.exists(os.pwd / "video" / s"$id" / s"$episode" / "frames")) {
-        os.makeDir.all(os.pwd / "video" / s"$id" / s"$episode" / "frames")
+      if (!os.exists(os.pwd / "img" / "video" / s"$id" / s"$episode" / "frames")) {
+        os.makeDir.all(os.pwd / "img" / "video" / s"$id" / s"$episode" / "frames")
       }
       val writer = new StreamingGifWriter(java.time.Duration.ofMillis(100), true)
       writer.prepareStream(
-        (os.pwd / "video" / s"$id" / s"$episode" / "video.gif").toIO.toString,
+        (os.pwd / "img" / "video" / s"$id" / s"$episode" / "video.gif").toIO.toString,
         BufferedImage.TYPE_INT_ARGB
       )
     }
@@ -64,7 +64,7 @@ case class Render(when: Instant, dt: Long, id: String, episode: Int, maxTime: Lo
     }
     //println(when.toEpochMilli, endRecord.toEpochMilli)
     val outFile = s"${when.toEpochMilli.toInt}".reverse.padTo(20, '0').reverse
-    val out = new File(s"video/$id/$episode/frames/$outFile.png")
+    val out = new File(s"img/video/$id/$episode/frames/$outFile.png")
     ImageIO.write(image, "png", out)
     endRecord.foreach { end =>
       if (when.toEpochMilli >= end.toEpochMilli) {
