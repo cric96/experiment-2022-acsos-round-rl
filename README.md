@@ -21,6 +21,8 @@ The Aggregate Computing program is supported through ScaFi -- a Scala DSL for ag
   - use the right folder in which you have generated the data
   
 ```docker run -v "$(pwd)"/result:/root/res -v "$(pwd)"/images:/root/img gianlucaaguzzi/acsos-2022-local-plots```
+
+If you are using Windows, you can you %cd% instead of "$(pwd)". 
 ## Launch Experiment (Local)
 - Prerequisites:
   - JDK > 11
