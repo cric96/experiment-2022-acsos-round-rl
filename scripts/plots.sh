@@ -1,5 +1,5 @@
 #!/bin/bash
-sbt "generatePlots 1000 50"
+sbt "generatePlots 50 1000"
 ls img/plain-grad*/analysis.csv |  xargs -I{} cp "{}" temp.csv
 python3 plot-change-scale.py res/plain-gradient.csv
 python3 analysis.py temp.csv
