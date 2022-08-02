@@ -67,7 +67,7 @@ git clone git@github.com:cric96/experiment-2022-acsos-round-rl.git ## SSH
 ```
 As a smoke test, type in your console:
 ```bash
-./sbtw compile
+./sbtx compile
 ```
 Then, you have to install python dependencies:
 ```bash
