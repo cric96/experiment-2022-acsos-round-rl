@@ -26,7 +26,7 @@ other two folders will be generated, that are:
   - error-and-ticks.svg: show the evolution of the error and the ticks for each episode.
   - image-rl-*episode*: show the performance of the algorithm in a certain episode. We produce one every 50 episodes. The images included in the paper are produced with the configuration expressed in `./solution.txt`
 
-These are the ones that you can download in the [GitHub release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.0/img.tar.gz) (if you do not want to re-launch the simulations).
+These are the ones that you can download in the [GitHub release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz) (if you do not want to re-launch the simulations).
 ## Launch experiments
 ### Docker
 If you don't want to download the repository, you can launch the simulations and the plot generation directly using Docker.
@@ -37,13 +37,13 @@ Otherwise, you can use the [Git BASH](https://gitforwindows.org/).
 - launch the simulations (i.e., generate the data):
   - this will produce a local folder `result` with the data necessary to produce the plots
 
-```docker run -v "$(pwd)"/result:/root/res gianlucaaguzzi/acsos-2022-simulation:0.1.0```
+```docker run -v "$(pwd)"/result:/root/res gianlucaaguzzi/acsos-2022-simulation:0.1.1```
 
 - plots the results (data gathered from release):
   - this will produce a local folder `images` containing the plots and a video in the swap scenario
-  - the data generated could be found [here](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.0/img.tar.gz)
+  - the data generated could be found [here](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz)
 
-```docker run -v "$(pwd)"/images:/root/img gianlucaaguzzi/acsos-2022-generate-plots:0.1.0```
+```docker run -v "$(pwd)"/images:/root/img gianlucaaguzzi/acsos-2022-generate-plots:0.1.1```
 
 - plots charts from local data (i.e., produce using the docker image gianlucaaguzzi/acsos-2022-simulation):
   - use this only if you launch a local simulation and, you would see the differences w.r.t. the published version
@@ -84,7 +84,7 @@ You would re-run simulations if:
 - you want to check the reproducibility of the simulations
 
 In modern machines, the simulations could last entire days.
-For this reason, we upload the data in the GitHub release (download [here](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.0/res.tar.gz)).
+For this reason, we upload the data in the GitHub release (download [here](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/res.tar.gz)).
 In this way, if you want to check regenerate the plots only, you can download the archive in the release.
 
 **NB** In order to use the archive, you should unzip it in the root folder of the project.
@@ -107,7 +107,7 @@ Inside images/video, there is the result of the policy learnt via Q-Learning:
 The colour of the small rectangles describes the node frequency (the redder the colour is, the higher the frequency).
 The colour of the large rectangle, instead, underlines the output (the greener the colour is, the nearest the nodes are to the sources
 
-The other charts presented in the paper could be found in the [release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.0/img.tar.gz) (or inside the img folder).
+The other charts presented in the paper could be found in the [release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz) (or inside the img folder).
 Each scenario (gradient, multiswap, block-c) contains several subfolder, one for each configuration (see `configurations`).
 
 ## Miscellaneous
