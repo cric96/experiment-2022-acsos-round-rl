@@ -77,7 +77,7 @@ To execute the simulations, use:
 ```bash
 ./scripts/massive-launch-and-wait.sh
 ```
-The data generated from this command are stored in `res/` (the same data upload to GH release).
+The data generated from this command are stored in `res/`.
 You would re-run simulations if:
 - you perform changes in the code and you want to see how things changes
 - you change some configurations (please check `configurations` folder)
