@@ -100,7 +100,7 @@ Furthermore, in `./img/video` there is the result of the learnt scheduling polic
 
 
 ### Results
-Inside images/video, there is the result of the policy learnt via Q-Learning:
+Inside `img/video/0`, there is the result of the policy learnt via Q-Learning:
 
 ![Gif](https://user-images.githubusercontent.com/23448811/179006064-f0f56dbb-6775-4e50-ba9e-4e759078df5f.gif)
 
