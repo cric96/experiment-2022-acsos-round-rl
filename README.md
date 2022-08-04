@@ -26,7 +26,7 @@ other two folders will be generated, that are:
   - error-and-ticks.svg: show the evolution of the error and the ticks for each episode.
   - image-rl-*episode*: show the performance of the algorithm in a certain episode. We produce one every 50 episodes. The images included in the paper are produced with the configuration expressed in `./solution.txt`
 
-These are the ones that you can download in the [GitHub release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz) (if you do not want to re-launch the simulations).
+These folders are the ones that you can download in the [GitHub release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz) (if you do not want to re-launch the simulations).
 ## Launch experiments
 ### Docker
 If you don't want to download the repository, you can launch the simulations and the plot generation directly using Docker.
