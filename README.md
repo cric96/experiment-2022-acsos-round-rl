@@ -49,7 +49,7 @@ Otherwise, you can use the [Git BASH](https://gitforwindows.org/).
   - use this only if you launch a local simulation and, you would see the differences w.r.t. the published version
   - use the right folder in which you have generated the data. Here I suppose that is `./result`, the one generated from the first command
 
-```docker run -v "$(pwd)"/result:/root/res -v "$(pwd)"/images:/root/img gianlucaaguzzi/acsos-2022-local-plots```
+```docker run -v "$(pwd)"/result:/root/res -v "$(pwd)"/images:/root/img gianlucaaguzzi/acsos-2022-local-plots:0.1.1```
 ### Host Machine
 - Prerequisites:
   - JDK > 11
