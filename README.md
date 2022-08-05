@@ -14,7 +14,7 @@ If you want more information about ScaFi, please refer to the official site:
 - `./lib`: it contains the ScaFi library with the new simulator --- se the end of the README
 - `./docker`: it contains the main configuration to create the images presented in the following
 
-If you follow the instruction described in [Launch Experiment (In the Host Machine)](#host-machine)
+If you follow the instructions described in [Launch Experiment (In the Host Machine)](#host-machine)
 other two folders will be generated, that are:
 - `./res`: it contains the data generated from simulations. Here three folders are:
   - plain-cblock: contains the results produced using the C building block in the swap scenario;
