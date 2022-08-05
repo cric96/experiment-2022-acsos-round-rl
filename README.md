@@ -11,17 +11,16 @@ If you want more information about ScaFi, please refer to the official site:
 - `./src`: it contains the main scala code developed (following a standard SBT project structure)
 - `./configurations`: it contains the main configurations used to run the simulation presented in the paper
 - `./scripts`: it contains the main scripts used to launch simulation and to generate plots
-- `./lib`: it contains the ScaFi library with the new simulator --- se the end of the README
+- `./lib`: it contains the ScaFi library with the new simulator --- see the end of the README
 - `./docker`: it contains the main configuration to create the images presented in the following
 
-If you follow the instructions described in [Launch Experiment (In the Host Machine)](#host-machine)
-other two folders will be generated, that are:
+If you follow the instructions described in [Launch Experiment (In the Host Machine)](#host-machine) other two folders will be generated, that are:
 - `./res`: it contains the data generated from simulations. Here three folders are:
   - plain-cblock: contains the results produced using the C building block in the swap scenario;
   - plain-gradient: contains the results produced using the gradient building block in the swap scenario;
   - multiswap: contains the results produced using the gradient building block in the multi swap scenario.
 
-  Please refer to the paper to get more details about the experiments and the different scenarios (*swap* and *multiswap*). In each folder, there is other 72 folders (one for each configuration) that contain the main metrics extracted for each episode and `runtime.json`, which contains the Q-Table generated in that configuration. With the latter, we verify how the system handles several nodes, producing the `plain-gradient.csv` file.
+  Please refer to the paper to get more details about the experiments and the different scenarios (*swap* and *multiswap*). In each folder, there are other 72 folders (one for each configuration) that contain the main metrics extracted for each episode and `runtime.json`, which contains the Q-Table generated in that configuration. With the latter, we verify how the system handles several nodes, producing the `plain-gradient.csv` file.
 - `./img`: it contains the charts produced with the plotting scripts. It has the same three folders (plain-cblock, multiswap and plain-gradient). For each experiment, there are the charts shown in the paper. Particularly:
   - error-and-ticks.svg: show the evolution of the error and the ticks for each episode.
   - image-rl-*episode*: show the performance of the algorithm in a certain episode. We produce one every 50 episodes. The images included in the paper are produced with the configuration expressed in `./solution.txt`
@@ -79,15 +78,15 @@ To execute the simulations, use:
 ```
 The data generated from this command are stored in `res/`.
 You would re-run simulations if:
-- you perform changes in the code and you want to see how things changes
+- you perform changes in the code and you want to see how things change
 - you change some configurations (please check `configurations` folder)
 - you want to check the reproducibility of the simulations
 
 In modern machines, the simulations could last entire days.
 For this reason, we upload the data in the GitHub release (download [here](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/res.tar.gz)).
-In this way, if you want to check regenerate the plots only, you can download the archive in the release.
+In this way, if you want to check to regenerate the plots only, you can download the archive in the release.
 
-**NB** In order to use the archive, you should unzip it in the root folder of the project.
+**NB** To use the archive, you should unzip it in the root folder of the project.
 
 After you have gathered the data (either with simulation or downloading it),
 you can  launch the following command to generate the plots presented in the paper:
@@ -108,7 +107,7 @@ The colour of the small rectangles describes the node frequency (the redder the 
 The colour of the large rectangle, instead, underlines the output (the greener the colour is, the nearest the nodes are to the sources
 
 The other charts presented in the paper could be found in the [release](https://github.com/cric96/experiment-2022-acsos-round-rl/releases/download/0.1.1/img.tar.gz) (or inside the img folder).
-Each scenario (gradient, multiswap, block-c) contains several subfolder, one for each configuration (see `configurations`).
+Each scenario (gradient, multiswap, block-c) contains several subfolders, one for each configuration (see `configurations`).
 
 ## Miscellaneous
 This repository used an ad-hoc ScaFi version with the support of DES-like simulations.
